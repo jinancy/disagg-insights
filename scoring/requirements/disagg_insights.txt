@@ -1,0 +1,6 @@
+numpy
+pandas
+pyspark==2.4.6
+pyhocon==0.3.57
+tensorflow==2.5.0
+

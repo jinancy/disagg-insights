@@ -1,0 +1,114 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        classpath 'org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:2.6.2'
+    }
+}
+
+plugins {
+    id 'scala'
+    id "org.scoverage" version "4.0.1"
+    id "com.github.alisiikh.scalastyle" version "3.3.0"
+}
+
+version 'unspecified'
+
+repositories {
+    maven { url 'https://artifacthub.oraclecorp.com/ugbu-cne-dev-maven' }
+    maven { url 'https://artifactory.oraclecorp.com/artifactory/fmw-remote-virtual' }
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+ext.sonarLogin = System.getenv("SONAR_USER") ?: "UGBU_OUAI"
+
+ext {
+    // Latest stable spark-core and spark-sql versions
+    sparkVersion = '2.4.6'
+    // Last popular stable upload for scala-2.12 based scala-reflect and scala-library dependencies
+    scalaVersion = '2.12'
+    scalaReflectVersion = '2.12.10'
+    scalaLibraryVersion = '2.12.10'
+    scalaTestVersion = '3.0.8'
+    embeddedKafkaVersion = '2.3.0'
+    ociSdkVersion = '1.16.0'
+    squareRetrofit2Version = '2.8.1'
+    squareOkHttp3Version = '4.5.0'
+    gsonVersion = '2.8.6'
+}
+
+sourceCompatibility = 1.8
+
+description = """pre-process"""
+
+dependencies {
+    // Implementation dependencies
+    implementation group: 'org.scala-lang', name: 'scala-library', version: "${scalaLibraryVersion}", force: 'true'
+    implementation group: 'org.apache.spark', name: "spark-sql_${scalaVersion}", version: "${sparkVersion}"
+    implementation group: 'org.apache.spark', name: "spark-core_${scalaVersion}", version: "${sparkVersion}"
+    implementation group: 'org.apache.spark', name: "spark-sql-kafka-0-10_${scalaVersion}", version: "${sparkVersion}"
+    implementation group: 'org.scala-lang', name: 'scala-library', version: "${scalaLibraryVersion}", force: 'true'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+    implementation group: 'com.typesafe', name: 'config', version: '1.4.0'
+    implementation group: 'io.delta', name: "delta-core_${scalaVersion}", version: '0.6.1'
+    implementation group: 'commons-cli', name: 'commons-cli', version: '1.2'
+    implementation group: 'com.oracle.oci.sdk', name: 'oci-java-sdk-secrets', version: "$ociSdkVersion"
+
+    implementation group: 'io.delta', name: 'delta-core_2.12', version: '0.6.1'
+//    implementation group: 'io.delta', name: 'delta-contribs_2.12', version: '1.0.0'
+//    implementation name:'delta-lake-0.6.1-20200918.084153-24'
+
+//    implementation group: 'com.oracle.oci.sdk', name: 'oci-hdfs-connector', version: '2.9.2.1'
+//    implementation name:'bcpkix-jdk15on-1.61'
+//    implementation name:'bcprov-jdk15on-1.61'
+//    implementation name:'oci-hdfs-full-2.9.2.1'
+
+
+    // Test Compile dependencies
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-scala_2.12', version: '2.6.7.1', force: 'true'
+    //testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.7.9', force: 'true'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.7', force: 'true'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.7.3', force: 'true'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.6.7', force: 'true'
+    testCompile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '2.7.2', force: 'true'
+    testCompile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '2.7.2', force: 'true'
+    testCompile group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-shuffle', version: '2.9.2', force: 'true'
+    testCompile group: 'com.google.guava', name: 'guava', version: '19.0', force: 'true'
+    testCompile group: 'commons-io', name: 'commons-io', version: '2.4', force: 'true'
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.scalatest', name: "scalatest_${scalaVersion}", version: "${scalaTestVersion}", force:'true'
+    testCompile group: 'io.github.embeddedkafka', name: "embedded-kafka_${scalaVersion}", version: "${embeddedKafkaVersion}"
+    testCompile group: 'org.apache.spark', name: "spark-sql_${scalaVersion}", version: "${sparkVersion}"
+    testCompile group: 'io.delta', name: "delta-core_${scalaVersion}", version: '0.6.0'
+    testImplementation group: 'com.holdenkarau', name: 'spark-testing-base_2.12', version: '2.4.6_1.1.0'
+    testImplementation "org.mockito:mockito-core:3.0.0"
+    testImplementation group: 'com.holdenkarau', name: 'spark-testing-base_2.12', version: '2.4.6_1.1.0'
+
+
+    // Runtime dependencies
+    runtimeOnly group: 'org.scala-lang', name: 'scala-reflect', version: "${scalaReflectVersion}"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': "com.oracle.ugbu.ouai.ad.AppDisaggPreProcessor"
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    manifest.from jar.manifest
+    from(configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+    }
+    with jar
+}

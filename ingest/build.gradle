@@ -1,0 +1,79 @@
+plugins {
+    id 'scala'
+}
+
+version '0.0.1'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+ext {
+    // Latest stable spark-core and spark-sql versions
+    sparkVersion = '2.4.6'
+    // Last popular stable upload for scala-2.12 based scala-reflect and scala-library dependencies
+    scalaVersion = '2.12'
+    scalaReflectVersion = '2.12.10'
+    scalaLibraryVersion = '2.12.10'
+    scalaTestVersion = '3.0.8'
+    embeddedKafkaVersion = '2.3.0'
+    ociSdkVersion = '1.16.0'
+    squareRetrofit2Version = '2.8.1'
+    squareOkHttp3Version = '4.5.0'
+
+    gsonVersion = '2.8.6'
+}
+
+sourceCompatibility = 1.8
+dependencies {
+    implementation 'org.apache.spark:spark-streaming_2.11:2.4.7'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.6.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
+    implementation group: 'org.apache.spark', name: 'spark-core_2.12', version: '2.4.5'
+    implementation group: 'org.apache.spark', name: 'spark-sql_2.12', version: '2.4.5'
+    implementation group: 'com.typesafe', name: 'config', version: '1.4.0'
+    implementation group: 'com.fasterxml.jackson.module', name: 'jackson-module-scala_2.12', version: '2.6.7.1', force: 'true'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.6.7', force: 'true'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.6.7.3', force: 'true'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.6.7', force: 'true'
+
+//    implementation group: 'io.delta', name: 'delta-core_2.12', version: '0.6.1'
+//    implementation group: 'io.delta', name: 'delta-contribs_2.12', version: '1.0.0'
+    implementation name:'delta-lake-0.6.1-20200918.084153-24'
+
+//    implementation group: 'com.oracle.oci.sdk', name: 'oci-hdfs-connector', version: '2.9.2.1'
+    implementation name:'bcpkix-jdk15on-1.61'
+    implementation name:'bcprov-jdk15on-1.61'
+    implementation name:'oci-hdfs-full-2.9.2.1'
+
+    compile 'org.postgresql:postgresql:42.2.20'
+
+    testImplementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.3.0-alpha5'
+
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile group: 'org.scalatest', name: "scalatest_${scalaVersion}", version: "${scalaTestVersion}", force:'true'
+
+}
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': "com.oracle.ugbu.ouai.insight.pecan.PecanStDataIngester"
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    manifest.from jar.manifest
+    from(configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude "META-INF/*.SF", "META-INF/*.DSA", "META-INF/*.RSA"
+    }
+    with jar
+}
